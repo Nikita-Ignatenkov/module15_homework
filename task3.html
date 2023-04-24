@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .form {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            height: 40px;
+            border: 3px solid #bad7ec;
+        }
+
+        .input {
+            border: 3px solid #bad7ec;
+            height: 18px;
+        }
+
+        .btn {
+            padding: 5px 15px;
+            background-color: #bad7ec;
+            border: none;
+        }
+
+        .chatBox {
+            margin-top: 10px;
+            width: 396px;
+            padding: 5px 15px;
+            border: 3px solid #bad7ec;
+            height: 300px;
+            overflow-y: scroll;
+            position: relative;
+            display: flex;
+            flex-wrap: nowrap;
+            flex-direction: column;
+        }
+
+        .pre {
+            max-width: 45%;
+            width: fit-content;
+            padding: 10px;
+            border: 3px solid #ADD8E6;
+            border-radius: 10px;
+            word-wrap: break-word;
+        }
+
+        .div {
+            display: flex;
+        }
+
+        .div:nth-child(odd) {
+            justify-content: end;
+        }
+
+        .link {
+            width: fit-content;
+            padding: 10px;
+            margin: 16px 0;
+            border: 3px solid #ADD8E6;
+            border-radius: 10px;
+            text-decoration: none;
+            color: #1E90FF;
+            transition: color .2s linear;
+        }
+
+        .link:hover {
+            color: #69affa;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main">
+        <div class="form">
+            <input class="messageInput" type="text" placeholder="Введите текст сообщения">
+            <button class="btn btnSend" type="button">отправить</button>
+            <button class="btn btnLocation" type="button">геолокация</button>
+        </div>
+        <div class="chatBox"></div>
+    </div>
+    <script>
+        const wsUri = "wss://echo-ws-service.herokuapp.com";
+
+        const chatBox = document.querySelector(".chatBox");
+        const messageInput = document.querySelector(".messageInput");
+        const btnSend = document.querySelector(".btnSend");
+        const btnLocation = document.querySelector(".btnLocation");
+        let websocket;
+
+        function showMessage(message) {
+            let div = document.createElement('div')
+            div.classList.add('div')
+            div.innerHTML = `<p class="pre">${message}</p>`
+
+            chatBox.appendChild(div)
+        }
+
+        function initWebSocket() {
+            websocket = new WebSocket(wsUri)
+
+            websocket.onopen = () => {
+                console.log('Соединение установлено')
+            }
+
+            websocket.onclose = () => {
+                console.log('Обрыв соединения')
+
+                initWebSocket()
+            }
+
+            websocket.onmessage = (event) => {
+                if (event.data === 'echo.websocket.events sponsored by Lob.com') {
+
+                } else {
+                    showMessage(event.data)
+                }
+            }
+        }
+
+        initWebSocket()
+
+
+        btnSend.addEventListener('click', () => {
+            const message = messageInput.value.trim();
+
+            if (message === "") {
+                btnSend.setAttribute('disabled', 'disabled');
+                return;
+            }
+
+            showMessage(message);
+            websocket.send(message);
+            messageInput.value = '';
+        })
+
+        btnLocation.addEventListener('click', () => {
+            if (!navigator.geolocation) {
+                alert('Geolocation не поддерживается вашим браузером')
+            } else {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const { coords } = position
+
+                    let div = document.createElement('div')
+
+                    div.classList.add('div')
+                    div.innerHTML = `<a class="link" href="https://www.openstreetmap.org/export/embed.html?bbox=${coords.longitude}%2C${coords.latitude}&amp;layer=mapnik">Гео-локация</a>`
+
+                    chatBox.appendChild(div)
+                })
+            }
+        })
+
+    </script>
+</body>
+
+</html>
